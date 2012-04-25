@@ -1,7 +1,7 @@
 package edu.unlv.cs.whoseturn.domain;
 
-import java.io.Serializable;
-import java.util.List;
+import java.util.Set;
+
 import javax.jdo.annotations.Extension;
 import javax.jdo.annotations.IdGeneratorStrategy;
 import javax.jdo.annotations.IdentityType;
@@ -9,7 +9,6 @@ import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 import com.google.gwt.user.client.rpc.IsSerializable;
-
 
 /**
  * The user domain object. 
@@ -60,7 +59,7 @@ public class User implements IsSerializable  {
      * Possible way to display a blob for a user.
      */
     @Persistent
-    private byte[] avatarBlob;
+    private Integer avatarId;
 
     /**
      * How many times a user has lied.
@@ -72,13 +71,13 @@ public class User implements IsSerializable  {
      * Turn items.
      */
     @Persistent
-    private List<String> turnItems;
+    private Set<String> turnItems;
 
     /**
      * List of badges.
      */
     @Persistent
-    private List<String> badges;
+    private Set<String> badges;
 
     /**
      * Get key string.
@@ -171,25 +170,7 @@ public class User implements IsSerializable  {
         this.deleted = deleted;
     }
 
-    /**
-     * Get the avatar blob.
-     * 
-     * @return The avatar blob.
-     */
-    public final byte[] getAvatarBlob() {
-        return avatarBlob;
-    }
-
-    /**
-     * Set the avatar blob.
-     * 
-     * @param avatarBlob The avatar blob.
-     */
-    public final void setAvatarBlob(final byte[] avatarBlob) {
-        this.avatarBlob = avatarBlob;
-    }
-
-    public final List<String> getTurnItems() {
+    public final Set<String> getTurnItems() {
         return turnItems;
     }
 
@@ -198,7 +179,7 @@ public class User implements IsSerializable  {
      * 
      * @return The badges.
      */
-    public final List<String> getBadges() {
+    public final Set<String> getBadges() {
         return badges;
     }
 
@@ -207,7 +188,7 @@ public class User implements IsSerializable  {
      * 
      * @param badges The badges.
      */
-    public final void setBadges(final List<String> badges) {
+    public final void setBadges(final Set<String> badges) {
         this.badges = badges;
     }
 
@@ -234,7 +215,7 @@ public class User implements IsSerializable  {
      * 
      * @param turnItems The turn items.
      */
-    public final void setTurnItems(final List<String> turnItems) {
+    public final void setTurnItems(final Set<String> turnItems) {
         this.turnItems = turnItems;
     }
 
@@ -263,5 +244,13 @@ public class User implements IsSerializable  {
         this.penaltyCount++;
 
     }
+
+	public Integer getAvatarId() {
+		return avatarId;
+	}
+
+	public void setAvatarId(Integer avatarId) {
+		this.avatarId = avatarId;
+	}
 
 }

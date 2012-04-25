@@ -1,7 +1,5 @@
 package edu.unlv.cs.whoseturn.domain;
 
-import java.io.Serializable;
-
 import javax.jdo.annotations.Extension;
 import javax.jdo.annotations.IdGeneratorStrategy;
 import javax.jdo.annotations.IdentityType;
@@ -39,7 +37,7 @@ public class BadgeAwarded implements IsSerializable  {
     private Integer count;
 
     /**
-     * Id to reference the the badge id.
+     * Id to reference the badge id.
      */
     @Persistent
     private Integer badgeId;
@@ -99,7 +97,7 @@ public class BadgeAwarded implements IsSerializable  {
     }
 
     /**
-     * Sets teh count of times awarded.
+     * Sets the count of times awarded.
      * 
      * @param count
      *            The count to set.

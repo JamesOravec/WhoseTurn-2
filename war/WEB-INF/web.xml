@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
+	xsi:schemaLocation="http://java.sun.com/xml/ns/javaee 
               http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
-         version="2.5"
-         xmlns="http://java.sun.com/xml/ns/javaee">
+	version="2.5" xmlns="http://java.sun.com/xml/ns/javaee">
 
   <!-- Servlets -->
  
@@ -16,6 +15,81 @@
     <servlet-name>usersServlet</servlet-name>
     <url-pattern>/whoseturn/users</url-pattern>
   </servlet-mapping>
+  
+  <servlet>
+    <servlet-name>categoriesServlet</servlet-name>
+    <servlet-class>edu.unlv.cs.whoseturn.server.CategoryServiceImpl</servlet-class>
+  </servlet>
+  
+  <servlet-mapping>
+    <servlet-name>categoriesServlet</servlet-name>
+    <url-pattern>/whoseturn/categories</url-pattern>
+  </servlet-mapping>
+  
+   <servlet>
+    <servlet-name>badgeServlet</servlet-name>
+    <servlet-class>edu.unlv.cs.whoseturn.server.BadgeServiceImpl</servlet-class>
+  </servlet>
+  
+  <servlet-mapping>
+    <servlet-name>badgeServlet</servlet-name>
+    <url-pattern>/whoseturn/badge</url-pattern>
+  </servlet-mapping>
+  
+    <servlet>
+    <servlet-name>turnServlet</servlet-name>
+    <servlet-class>edu.unlv.cs.whoseturn.server.TurnServiceImpl</servlet-class>
+  </servlet>
+  
+  <servlet-mapping>
+    <servlet-name>turnServlet</servlet-name>
+    <url-pattern>/whoseturn/turn</url-pattern>
+  </servlet-mapping>
+  
+  <servlet>
+		<servlet-name>MobileLoggedin</servlet-name>
+		<servlet-class>edu.unlv.cs.whoseturn.mobile.MobileLoggedinController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>MobileLoggedin</servlet-name>
+		<url-pattern>/mobile/index</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>MobileCategoryScreenController</servlet-name>
+		<servlet-class>edu.unlv.cs.whoseturn.mobile.MobileCategoryScreenController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>MobileCategoryScreenController</servlet-name>
+		<url-pattern>/mobile/category</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>MobileSelectionResultController</servlet-name>
+		<servlet-class>edu.unlv.cs.whoseturn.mobile.MobileSelectionResultController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>MobileSelectionResultController</servlet-name>
+		<url-pattern>/mobile/selectionresult</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>MobileResetDatabase</servlet-name>
+		<servlet-class>edu.unlv.cs.whoseturn.mobile.MobileResetDatabase</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>MobileResetDatabase</servlet-name>
+		<url-pattern>/mobile/reset</url-pattern>
+	</servlet-mapping>
+
+	<servlet>
+		<servlet-name>MobileLogoutController</servlet-name>
+		<servlet-class>edu.unlv.cs.whoseturn.mobile.MobileLogoutController</servlet-class>
+	</servlet>
+	<servlet-mapping>
+		<servlet-name>MobileLogoutController</servlet-name>
+		<url-pattern>/mobile/logout</url-pattern>
+	</servlet-mapping>
   
   <!-- Default page to serve -->
   <welcome-file-list>

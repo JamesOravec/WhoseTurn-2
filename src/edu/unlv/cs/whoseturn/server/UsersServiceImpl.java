@@ -1,38 +1,38 @@
 package edu.unlv.cs.whoseturn.server;
-
-import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
 
-import com.google.appengine.api.users.User;
+import com.google.appengine.api.datastore.Key;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
-import com.google.gwt.user.client.rpc.IsSerializable;
 import com.google.gwt.user.server.rpc.RemoteServiceServlet;
 
 import edu.unlv.cs.whoseturn.client.UsersService;
 import edu.unlv.cs.whoseturn.domain.Badge;
 import edu.unlv.cs.whoseturn.domain.BadgeAwarded;
+import edu.unlv.cs.whoseturn.domain.Category;
 import edu.unlv.cs.whoseturn.domain.PMF;
 import edu.unlv.cs.whoseturn.domain.Strategy;
+import edu.unlv.cs.whoseturn.domain.Turn;
+import edu.unlv.cs.whoseturn.domain.TurnItem;
+import edu.unlv.cs.whoseturn.domain.User;
 import edu.unlv.cs.whoseturn.shared.EntryVerifier;
 
 /**
  * User service that allows the client to CRUD information about users.
  */
+@SuppressWarnings("serial")
 public class UsersServiceImpl extends RemoteServiceServlet implements
-        UsersService, Serializable, IsSerializable  {
-
-    /**
-     * Allows objects to be serialized.
-     */
-    private static final long serialVersionUID = -1794808620527741935L;
+        UsersService  {
 
     /**
      * Used to keep track of open id providers.
@@ -65,10 +65,11 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
          * User auth service.
          */
         UserService userService = UserServiceFactory.getUserService();
+        
         /**
          * Logged in user.
          */
-        User user = userService.getCurrentUser();
+        com.google.appengine.api.users.User user = userService.getCurrentUser();
 
         // Ensure the user is logged in
         if (user == null) {
@@ -83,7 +84,7 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * Query to find the user based off the email
          */
-        Query query = pm.newQuery(edu.unlv.cs.whoseturn.domain.User.class,
+        Query query = pm.newQuery(User.class,
                 "email == emailParam");
 
         /**
@@ -94,20 +95,20 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * Execute the query with the email parameter
          */
-        List<edu.unlv.cs.whoseturn.domain.User> results = (List<edu.unlv.cs.whoseturn.domain.User>) query
+        List<User> results = (List<User>) query
                 .execute(user.getEmail());
 
-        // Check to make sure only one user was found and return the username
-        if (results.size() == 1) {
-            return results.get(0).getUsername();
-        }
         if (results.size() == 0) {
-            return "UserNotFound";
+        	return "UserNotFound";
         }
-
-        // TODO, should we change this to throw illegal states instead?
-        // Something went wrong if we're down here
-        return "ErrorFindingUser";
+        
+        // Check to make sure only one user was found and return the username
+        if (results.size() >= 2) {
+        	System.err.println("More than one user found with the email: " + user.getEmail());
+        	return "UserNotFound";
+        }
+        
+        return results.get(0).getUsername();
     }
 
     @SuppressWarnings("unchecked")
@@ -121,7 +122,7 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * Logged in user.
          */
-        User user = userService.getCurrentUser();
+        com.google.appengine.api.users.User user = userService.getCurrentUser();
 
         // Ensure the user is logged in
         if (user == null) {
@@ -136,7 +137,7 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * Query to find the user based off the email
          */
-        Query query = pm.newQuery(edu.unlv.cs.whoseturn.domain.User.class,
+        Query query = pm.newQuery(User.class,
                 "email == emailParam");
 
         /**
@@ -147,7 +148,7 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * Execute the query with the email parameter
          */
-        List<edu.unlv.cs.whoseturn.domain.User> results = (List<edu.unlv.cs.whoseturn.domain.User>) query
+        List<User> results = (List<User>) query
                 .execute(user.getEmail());
 
         // Check to make sure only one user was found and return the username
@@ -217,16 +218,16 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * New user object to add.
          */
-        edu.unlv.cs.whoseturn.domain.User user = new edu.unlv.cs.whoseturn.domain.User();
+        User user = new User();
 
         // Set properties of the user
         user.setAdmin(admin);
-        user.setAvatarBlob(null);
+        user.setAvatarId(0);
         user.setDeleted(false);
         user.setEmail(email);
         user.setUsername(username);
         user.setPenaltyCount(0);
-        user.setBadges(new ArrayList<String>());
+        user.setBadges(new HashSet<String>());
 
         // Creation of the user's default badges
         /**
@@ -283,7 +284,7 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * Query for the users.
          */
-        Query query = pm.newQuery(edu.unlv.cs.whoseturn.domain.User.class);
+        Query query = pm.newQuery(User.class);
 
         /**
          * Result string list.
@@ -293,12 +294,12 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * Result List.
          */
-        List<edu.unlv.cs.whoseturn.domain.User> results;
+        List<User> results;
 
         try {
-            results = (List<edu.unlv.cs.whoseturn.domain.User>) query.execute();
+            results = (List<User>) query.execute();
             if (!results.isEmpty()) {
-                for (edu.unlv.cs.whoseturn.domain.User e : results) {
+                for (User e : results) {
                     if (e.getUsername().equals(usermame)) {
                         resultStringList.add(new String[] { e.getUsername(),
                                 e.getEmail(), e.getAdmin().toString(),
@@ -326,7 +327,7 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * Query for the users.
          */
-        Query query = pm.newQuery(edu.unlv.cs.whoseturn.domain.User.class);
+        Query query = pm.newQuery(User.class);
 
         /**
          * Result string list.
@@ -336,12 +337,12 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         /**
          * Result List.
          */
-        List<edu.unlv.cs.whoseturn.domain.User> results;
+        List<User> results;
 
         try {
-            results = (List<edu.unlv.cs.whoseturn.domain.User>) query.execute();
+            results = (List<User>) query.execute();
             if (!results.isEmpty()) {
-                for (edu.unlv.cs.whoseturn.domain.User e : results) {
+                for (User e : results) {
                     resultStringList.add(new String[] { e.getUsername(),
                             e.getEmail(), e.getAdmin().toString() });
                 }
@@ -359,16 +360,16 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
     @Override
     public final List<String> findNonDeletedUsers() {
         PersistenceManager pm = PMF.get().getPersistenceManager();
-        Query query = pm.newQuery(edu.unlv.cs.whoseturn.domain.User.class,
+        Query query = pm.newQuery(User.class,
                 "deleted != true");
 
         List<String> resultStringList = new ArrayList<String>();
-        List<edu.unlv.cs.whoseturn.domain.User> results;
+        List<User> results;
 
         try {
-            results = (List<edu.unlv.cs.whoseturn.domain.User>) query.execute();
+            results = (List<User>) query.execute();
             if (!results.isEmpty()) {
-                for (edu.unlv.cs.whoseturn.domain.User e : results) {
+                for (User e : results) {
                     resultStringList.add(e.getUsername());
                 }
             } else {
@@ -381,18 +382,19 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         return resultStringList;
     }
 
-    @Override
+    @SuppressWarnings("unchecked")
+	@Override
     public final List<String> findAllUsers() {
         PersistenceManager pm = PMF.get().getPersistenceManager();
-        Query query = pm.newQuery(edu.unlv.cs.whoseturn.domain.User.class);
+        Query query = pm.newQuery(User.class);
 
         List<String> resultStringList = new ArrayList<String>();
-        List<edu.unlv.cs.whoseturn.domain.User> results;
+        List<User> results;
 
         try {
-            results = (List<edu.unlv.cs.whoseturn.domain.User>) query.execute();
+            results = (List<User>) query.execute();
             if (!results.isEmpty()) {
-                for (edu.unlv.cs.whoseturn.domain.User e : results) {
+                for (User e : results) {
                     resultStringList.add(e.getUsername());
                 }
             } else {
@@ -403,27 +405,6 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
             pm.close();
         }
         return resultStringList;
-    }
-
-    @Override
-    public final List<edu.unlv.cs.whoseturn.domain.User> getAllUsers() {
-        PersistenceManager pm = PMF.get().getPersistenceManager();
-        Query query = pm.newQuery(edu.unlv.cs.whoseturn.domain.User.class);
-
-        List<edu.unlv.cs.whoseturn.domain.User> results = new ArrayList<edu.unlv.cs.whoseturn.domain.User>();
-
-        try {
-            // We cannot write a query result directly to an array, so we write
-            // it to a collection then take add each result to our array list.
-            Collection allUsers = (Collection) query.execute();
-            for (Object result : allUsers) {
-                results.add((edu.unlv.cs.whoseturn.domain.User) result);
-            }
-        } finally {
-            query.closeAll();
-            // pm.close();
-        }
-        return results;
     }
 
     @SuppressWarnings("unchecked")
@@ -433,150 +414,307 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
          * The persistence manager.
          */
         PersistenceManager pm = PMF.get().getPersistenceManager();
-
+        
+        // Wipe the database
+        Query BadgeWipeQuery = pm.newQuery(Badge.class);
+        List <Badge> BadgeWipeList = (List<Badge>)BadgeWipeQuery.execute();
+        pm.deletePersistentAll(BadgeWipeList);
+        
+        Query BadgeAwardedWipeQuery = pm.newQuery(BadgeAwarded.class);
+        List <BadgeAwarded> BadgeAwardedWipeList = (List<BadgeAwarded>)BadgeAwardedWipeQuery.execute();
+        pm.deletePersistentAll(BadgeAwardedWipeList);
+        
+        Query CategoryWipeQuery = pm.newQuery(Category.class);
+        List <Category> CategoryWipeList = (List<Category>)CategoryWipeQuery.execute();
+        pm.deletePersistentAll(CategoryWipeList);
+        
+        Query StrategyWipeQuery = pm.newQuery(Strategy.class);
+        List <Strategy> StrategyWipeList = (List<Strategy>)StrategyWipeQuery.execute();
+        pm.deletePersistentAll(StrategyWipeList);
+        
+        Query TurnWipeQuery = pm.newQuery(Turn.class);
+        List <Turn> TurnWipeList = (List<Turn>)TurnWipeQuery.execute();
+        pm.deletePersistentAll(TurnWipeList);
+        
+        Query TurnItemWipeQuery = pm.newQuery(TurnItem.class);
+        List <TurnItem> TurnItemWipeList = (List<TurnItem>)TurnItemWipeQuery.execute();
+        pm.deletePersistentAll(TurnItemWipeList);
+        
+        Query UserWipeQuery = pm.newQuery(User.class);
+        List <User> UserWipeList = (List<User>)UserWipeQuery.execute();
+        pm.deletePersistentAll(UserWipeList);
+        
         // Create badges
+        
+        List<Badge> badgeList = new ArrayList<Badge>();
+        
         Badge badge = new Badge();
-        badge.setBadgeCriteria("Test badge 1");
-        badge.setBadgeId(1);
-        badge.setBadgeName("Test1");
+        badge.setBadgeCriteria("User submitted a turn with only himself.");
+        badge.setBadgeId(1000);
+        badge.setBadgeName("Jackass");
         badge.setDeleted(false);
-        pm.makePersistent(badge);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
 
         badge = new Badge();
-        badge.setBadgeCriteria("Test badge 2");
-        badge.setBadgeId(2);
-        badge.setBadgeName("Test2");
+        badge.setBadgeCriteria("Selected out of group of 4.");
+        badge.setBadgeId(1001);
+        badge.setBadgeName("Corner Stone");
         badge.setDeleted(false);
-        pm.makePersistent(badge);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
 
         badge = new Badge();
-        badge.setBadgeCriteria("Test badge 3");
-        badge.setBadgeId(3);
-        badge.setBadgeName("Test3");
+        badge.setBadgeCriteria("Not selected out of a group of 4.");
+        badge.setBadgeId(1002);
+        badge.setBadgeName("Don't Cross The Streams.");
         badge.setDeleted(false);
-        pm.makePersistent(badge);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Selected out of a group of 5.");
+        badge.setBadgeId(1003);
+        badge.setBadgeName("Human Sacrifice");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
 
-        // Create strategies
+        badge = new Badge();
+        badge.setBadgeCriteria("Not selected out of a group of 5.");
+        badge.setBadgeId(1004);
+        badge.setBadgeName("Not The Thumb!");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Selected out of a group of 6.");
+        badge.setBadgeId(1005);
+        badge.setBadgeName("Six Minute Abs");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Not selected out of a group of 6.");
+        badge.setBadgeId(1006);
+        badge.setBadgeName("Pick Up Sticks");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Selected out of a group of 7.");
+        badge.setBadgeId(1007);
+        badge.setBadgeName("Crapped Out");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Not selected out of a group of 7.");
+        badge.setBadgeId(1008);
+        badge.setBadgeName("Lucky No. 7");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Selected out of a group of 8.");
+        badge.setBadgeId(1009);
+        badge.setBadgeName("Snow White");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Not selected out of a group of 8.");
+        badge.setBadgeId(1010);
+        badge.setBadgeName("Dwarf");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Selected out of a group of more than 8.");
+        badge.setBadgeId(1011);
+        badge.setBadgeName("FML");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Not selected out of a group of more than 8.");
+        badge.setBadgeId(1012);
+        badge.setBadgeName("Statisitcally Speaking");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("User has no lies for 50 turns.");
+        badge.setBadgeId(1013);
+        badge.setBadgeName("Saint");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("User is part of a turn with more than 10 people.");
+        badge.setBadgeId(1014);
+        badge.setBadgeName("Socialite");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("User has participated in 10 turns.");
+        badge.setBadgeId(1015);
+        badge.setBadgeName("Rookie");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("User has participated in 100 turns.");
+        badge.setBadgeId(1016);
+        badge.setBadgeName("Veteran");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("User has participated in 250 turns.");
+        badge.setBadgeId(1017);
+        badge.setBadgeName("Elite");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("User has every badge.");
+        badge.setBadgeId(1018);
+        badge.setBadgeName("Whose Turn Master");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("Everyone in a turn was selected.");
+        badge.setBadgeId(1019);
+        badge.setBadgeName("Team Cheater");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("User is Chris Jones.");
+        badge.setBadgeId(1020);
+        badge.setBadgeName("StormShadow");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+        
+        badge = new Badge();
+        badge.setBadgeCriteria("User is Matthew Sowders");
+        badge.setBadgeId(1021);
+        badge.setBadgeName("MythBusters");
+        badge.setDeleted(false);
+        badge = pm.makePersistent(badge);
+        badgeList.add(badge);
+
+        // Create strategies & categories
         Strategy strategy = new Strategy();
         strategy.setDeleted(false);
         strategy.setStrategyName("Least Recently Gone");
         strategy.setStrategyId(1);
-        pm.makePersistent(strategy);
+        strategy = pm.makePersistent(strategy);
+        
+        Category category = new Category();
+        category.setDeleted(false);
+        category.setName("BeerLRG");
+        category.setStrategyKeyString(strategy.getKeyString());
+        category.setTimeBoundaryInHours(12);
+        category = pm.makePersistent(category);
 
         strategy = new Strategy();
         strategy.setDeleted(false);
         strategy.setStrategyName("Lowest Ratio");
         strategy.setStrategyId(2);
-        pm.makePersistent(strategy);
+        strategy = pm.makePersistent(strategy);
 
-        strategy = new Strategy();
-        strategy.setDeleted(false);
-        strategy.setStrategyName("Lowest Ratio With Penalty");
-        strategy.setStrategyId(3);
-        pm.makePersistent(strategy);
+        category = new Category();
+        category.setDeleted(false);
+        category.setName("ChipsLR");
+        category.setStrategyKeyString(strategy.getKeyString());
+        category.setTimeBoundaryInHours(12);
+        category = pm.makePersistent(category);
 
         strategy = new Strategy();
         strategy.setDeleted(false);
         strategy.setStrategyName("Completely Random");
-        strategy.setStrategyId(4);
-        pm.makePersistent(strategy);
+        strategy.setStrategyId(3);
+        strategy = pm.makePersistent(strategy);
+        
+        category = new Category();
+        category.setDeleted(false);
+        category.setName("DriveCR");
+        category.setStrategyKeyString(strategy.getKeyString());
+        category.setTimeBoundaryInHours(12);
+        category = pm.makePersistent(category);
 
-        // Create test users
-        // TODO - JAO Why are we sleeping here? Is this a hack for the Async
-        // stuff?
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e1) {
-            // TODO Auto-generated catch block
-            e1.printStackTrace();
-        }
-        // Creates a new user object to add
-        edu.unlv.cs.whoseturn.domain.User user = new edu.unlv.cs.whoseturn.domain.User();
+        // Create initial users
+        createNewUser(badgeList, "Ryan Lombardo", "lombar40@unlv.nevada.edu");
+        createNewUser(badgeList, "Test User", "test@example.com");
+        createNewUser(badgeList, "Dane Strong", "strongd@unlv.nevada.edu");
+        createNewUser(badgeList, "James Oravec", "james.oravec@gmail.com");
+        createNewUser(badgeList, "Matthew Sowders", "matthewsowders@gmail.com");
+        createNewUser(badgeList, "Chris Jones", "chris.pip@gmail.com");
+        createNewUser(badgeList, "Ernesto Pavon", "pavone@unlv.nevada.edu");
+        createNewUser(badgeList, "Shane Dieckmann", "dieckma3@unlv.nevada.edu");
+        createNewUser(badgeList, "Shawn Cannon", "kyriobs@gmail.com");
+        createNewUser(badgeList, "Corbin Benally", "benallyc@unlv.nevada.edu");
+        createNewUser(badgeList, "James Dabinett", "dabinett@unlv.nevada.edu");
 
-        // Set properties of the user
-        user.setAdmin(true);
-        user.setAvatarBlob(null);
-        user.setDeleted(false);
-        user.setEmail("lombar40@unlv.nevada.edu");
-        user.setUsername("ryan");
-        user.setPenaltyCount(0);
-        user.setBadges(new ArrayList<String>());
-
-        /**
-         * Creation of the user's default badges.
-         */
-        Query query = pm.newQuery(Badge.class); // Query the database for all
-                                                // badge types
-        /**
-         * Results List.
-         */
-        List<Badge> results;
-
-        /**
-         * temporary badgeAwarded to be used for the user.
-         */
-        BadgeAwarded tempBadgeAwarded;
-
-        // Execute the query and set the results
-        results = (List<Badge>) query.execute();
-
-        // Make sure badges were found
-        if (!results.isEmpty()) {
-            // Loop through all the badge types and create a BadgeAwarded for
-            // this user with count set to 0
-            for (Badge e : results) {
-                tempBadgeAwarded = new BadgeAwarded();
-                tempBadgeAwarded.setBadgeId(e.getBadgeId());
-                tempBadgeAwarded.setCount(0);
-                tempBadgeAwarded.setDeleted(false);
-                pm.makePersistent(tempBadgeAwarded);
-                user.addBadge(tempBadgeAwarded);
-            }
-        }
-
-        pm.makePersistent(user);
-        query.closeAll();
-
-        user = new edu.unlv.cs.whoseturn.domain.User();
-
-        // Set properties of the user
-        user.setAdmin(true);
-        user.setAvatarBlob(null);
-        user.setDeleted(false);
-        user.setEmail("test@example.com");
-        user.setUsername("test");
-        user.setPenaltyCount(0);
-        user.setBadges(new ArrayList<String>());
-
-        // Creation of the user's default badges
-        query = pm.newQuery(Badge.class); // Query the database for all badge
-                                          // types
-
-        // Execute the query and set the results
-        results = (List<Badge>) query.execute();
-
-        // Make sure badges were found
-        if (!results.isEmpty()) {
-            // Loop through all the badge types and create a BadgeAwarded for
-            // this user with count set to 0
-            for (Badge e : results) {
-                tempBadgeAwarded = new BadgeAwarded();
-                tempBadgeAwarded.setBadgeId(e.getBadgeId());
-                tempBadgeAwarded.setCount(0);
-                tempBadgeAwarded.setDeleted(false);
-                pm.makePersistent(tempBadgeAwarded);
-                user.addBadge(tempBadgeAwarded);
-            }
-        }
-
-        pm.makePersistent(user);
-
-        query.closeAll();
         pm.close();
     }
 
-    @Override
-    public String updateUser(String username, String email, Boolean admin,
+	private void createNewUser(List<Badge> badgeList, String username, String email) {
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+		
+		User user = new User();
+		BadgeAwarded tempBadgeAwarded;
+
+        // Set properties of the user
+        user.setAdmin(true);
+        user.setAvatarId(0);
+        user.setDeleted(false);
+		user.setEmail(email);
+        user.setUsername(username);
+        user.setPenaltyCount(0);
+        user.setBadges(new HashSet<String>());
+
+        // Make sure badges were found
+        if (!badgeList.isEmpty()) {
+            // Loop through all the badge types and create a BadgeAwarded for
+            // this user with count set to 0
+            for (Badge e : badgeList) {
+                tempBadgeAwarded = new BadgeAwarded();
+                tempBadgeAwarded.setBadgeId(e.getBadgeId());
+                tempBadgeAwarded.setCount(0);
+                tempBadgeAwarded.setDeleted(false);
+                pm.makePersistent(tempBadgeAwarded);
+                user.addBadge(tempBadgeAwarded);
+            }
+        }
+
+        pm.makePersistent(user);
+	}
+
+    @SuppressWarnings("unchecked")
+	@Override
+    public String updateUser(String previousUsername, String previousEmail, String username, String email, Boolean admin,
             Boolean deleted) {
 
         // Get rid of any leading and trailing whitespace in the username and
@@ -593,7 +731,13 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         // A Valid username will return "Valid"
         // An invalid username will return "Invalid username"
         // A duplicate username will return "Username already exists"
-        errorMessage = EntryVerifier.isUsernameValid(username);
+        
+        if(previousUsername.equals(username)){
+        	errorMessage = "Valid";
+        }else{
+        	errorMessage = EntryVerifier.isUsernameValid(username);
+        }
+        	
 
         // If the username isn't "Valid", there was an error so return
         if (errorMessage != "Valid") {
@@ -603,7 +747,11 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
         // A valid email will return "Valid"
         // An invalid email will return "Invalid e-mail address"
         // A duplicate email will return "E-mail address already exists."
-        errorMessage = EntryVerifier.isEmailValid(email);
+        if(previousEmail.equals(email)){
+        	errorMessage = "Valid";
+        }else{
+        	errorMessage = EntryVerifier.isEmailValid(email);
+        }
 
         // If the email address isn't "Valid", there was an error so return
         if (errorMessage != "Valid") {
@@ -614,30 +762,96 @@ public class UsersServiceImpl extends RemoteServiceServlet implements
          * The persistence manager.
          */
         PersistenceManager pm = PMF.get().getPersistenceManager();
+        
+        /**
+         * Query to find the user based off the email
+         */
+        Query query = pm.newQuery(User.class,
+                "username == usernameParam");
+
+        /**
+         * Parameter for search.
+         */
+        query.declareParameters("String usernameParam");
+
+        /**
+         * Execute the query with the email parameter
+         */
+        List<User> resultList = (List<User>) query
+                .execute(previousUsername);
 
         /**
          * User object to update.
          */
-        edu.unlv.cs.whoseturn.domain.User user = new edu.unlv.cs.whoseturn.domain.User();
+        User user = resultList.get(0);
 
         // Set properties of the user
         user.setAdmin(admin);
-        user.setAvatarBlob(null);
         user.setDeleted(deleted);
         user.setEmail(email);
         user.setUsername(username);
-        user.setPenaltyCount(0);
-        // TODO Depending on the code, we might have to query badges and make
-        // note of them to get this before updating.
-        // user.setBadges(new HashSet<String>());
 
         // Persist the new user
-        try {
-            pm.makePersistent(user);
-        } finally {
-            pm.close();
-        }
+        pm.close();
 
         return "Success";
     }
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@Override
+	public List<String[]> getProfileInfo(String userName) {
+		/**
+		 * Persistence manager for CRUD.
+		 */
+		PersistenceManager pm = PMF.get().getPersistenceManager();
+
+		/**
+		 * Query for the users.
+		 */
+		Query usernameQuery = pm.newQuery(User.class, "username == usernameParam");
+		usernameQuery.declareParameters("String usernameParam");
+
+		/**
+		 * Result string list.
+		 */
+		List<String[]> userProfileInfo = new ArrayList<String[]>();
+
+		/**
+		 * Result List.
+		 */
+		List<User> userResults;
+
+		userResults = (List<User>) usernameQuery.execute(userName);
+		User userObject = userResults.get(0);
+		List<String> badgeKeyStrings = new ArrayList<String>(userObject.getBadges());
+		List<BadgeAwarded> badges = new ArrayList<BadgeAwarded>();
+		Key tempBadgeKey;
+		
+		for (int i=0; i < badgeKeyStrings.size(); i++) {
+			tempBadgeKey = KeyFactory.stringToKey(badgeKeyStrings.get(i));
+			badges.add(pm.getObjectById(BadgeAwarded.class, tempBadgeKey));
+		}
+		
+		Collections.sort(badges, new Comparator(){
+            public int compare(Object o1, Object o2) {
+                BadgeAwarded p1 = (BadgeAwarded) o1;
+                BadgeAwarded p2 = (BadgeAwarded) o2;
+               return p1.getBadgeId().compareTo(p2.getBadgeId());
+            }
+        });
+		
+		userProfileInfo.add(new String[] { userObject.getUsername(), userObject.getEmail() });
+		
+		String[] badgeCount = new String[22];
+		
+		for (int i=0; i < badges.size(); i++){
+			badgeCount[i] = badges.get(i).getCount().toString();
+		}
+		
+		userProfileInfo.add(badgeCount);
+		
+		pm.close();
+		
+		return userProfileInfo;
+	}
 }

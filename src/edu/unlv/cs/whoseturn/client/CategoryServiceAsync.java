@@ -39,18 +39,14 @@ public interface CategoryServiceAsync {
     void getAllCategories(AsyncCallback<List<String>> async);
 
     /**
-     * A way to help populate the database with some useful info, for testing,
-     * debugging, etc. Async Version.
-     * 
-     * @param async The async callback.
-     */
-    void loadInitialCategories(AsyncCallback<Void> async);
-
-    /**
      * Returns a list of all strategies in the system. Useful for when adding a
      * new category. Async Version.
      * 
      * @param async The async callback.
      */
     void getAllStrategies(AsyncCallback<List<String>> async);
+
+	void getCategoryInfo(String categoryName, AsyncCallback<List<String[]>> asyncCallback);
+
+	void categoryUpdate(String originalCategoryName, String newCategoryName, String newStrategy, String newTimeBoundary, Boolean deleted, AsyncCallback<String> asyncCallback);
 }

@@ -1,31 +1,19 @@
 package edu.unlv.cs.whoseturn.domain;
 
-import java.io.Serializable;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Set;
 
 import javax.jdo.annotations.Extension;
 import javax.jdo.annotations.IdGeneratorStrategy;
-import javax.jdo.annotations.IdentityType;
 import javax.jdo.annotations.PersistenceCapable;
 import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 
-import com.google.gwt.user.client.rpc.IsSerializable;
-
 /**
  * The turn domain object. 
  */
-//@PersistenceCapable
-@PersistenceCapable(identityType=IdentityType.APPLICATION,detachable="true")
-public class Turn implements IsSerializable  {
-
-    /**
-     * Default constructor. Needed for Serializable.
-     */
-    public Turn() {
-    }
+@PersistenceCapable
+public class Turn {
 
     /**
      * The primary key for the object.
@@ -36,7 +24,7 @@ public class Turn implements IsSerializable  {
     private String keyString;
 
     /**
-     * Time stampl.
+     * Time stamp.
      */
     @Persistent
     private Date turnDateTime;
@@ -51,7 +39,13 @@ public class Turn implements IsSerializable  {
      * List of turn items.
      */
     @Persistent
-    private HashSet<String> turnItems;
+    private Set<String> turnItems;
+    
+    /**
+     * Whether the turn is deleted or not
+     */
+    @Persistent
+    private Boolean deleted;
 
     // Getters and Setters.
     /**
@@ -113,7 +107,7 @@ public class Turn implements IsSerializable  {
      * 
      * @return The turn items.
      */
-    public final HashSet<String> getTurnItems() {
+    public final Set<String> getTurnItems() {
         return turnItems;
     }
 
@@ -122,7 +116,7 @@ public class Turn implements IsSerializable  {
      * 
      * @param turnItems The turn items.
      */
-    public final void setTurnItems(final HashSet<String> turnItems) {
+    public final void setTurnItems(final Set<String> turnItems) {
         this.turnItems = turnItems;
     }
 
@@ -143,5 +137,13 @@ public class Turn implements IsSerializable  {
     public final Integer getNumberOfUsers() {
         return turnItems.size();
     }
+
+	public Boolean getDeleted() {
+		return deleted;
+	}
+
+	public void setDeleted(Boolean deleted) {
+		this.deleted = deleted;
+	}
 
 }
